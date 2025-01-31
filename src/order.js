@@ -56,7 +56,7 @@ class Order {
       this.#time,
       this.#orderId,
       this.#foodDetails,
-      this.packageDetails,
+      this.#packageDetails,
       this.#deliveryDetails,
     );
   }
