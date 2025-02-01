@@ -1,88 +1,124 @@
-const deliverFood = (
-  { time, orderId, foodDetails, packageDetails, deliveryDetails },
-) => {
+const timeElapsed = (time) => ((Date.now() - time) / 1000).toFixed(2);
+
+const task = (begin, finish, timeTaken, next) => (orderDetails) => {
+  const beginDetails = begin(orderDetails);
   setTimeout(() => {
-    const timeElapsed = ((Date.now() - time) / 1000).toFixed(2);
-    console.log([timeElapsed], "Order delivered:", {
-      orderId,
-      foodDetails,
-      packageDetails,
+    const finishDetails = finish(beginDetails);
+    next(finishDetails);
+  }, timeTaken);
+};
+
+const deliverFood = task(
+  ({ time, ...rest }) => {
+    console.log([timeElapsed(time)], "Delivering order...");
+    return { ...rest, time };
+  },
+  ({ time, ...rest }) => {
+    const deliveryDetails = "Delivered by John at 7:30 PM";
+    console.log([timeElapsed(time)], "Ordered delivered:", {
+      ...rest,
       deliveryDetails,
     });
+
+    return { ...rest, deliveryDetails, time };
+  },
+  5000,
+  () => {},
+);
+
+const packFood = task(
+  ({ time, ...rest }) => {
+    console.log([timeElapsed(time)], "Packing order...");
+
+    return { ...rest, time };
+  },
+  ({ time, ...rest }) => {
+    const packageDetails = "Packed in eco-friendly box";
+    console.log([timeElapsed(time)], "Order packed:", {
+      ...rest,
+      packageDetails,
+    });
+
+    return { ...rest, packageDetails, time };
+  },
+  2000,
+  deliverFood,
+);
+
+const prepareFood = task(
+  ({ time, ...rest }) => {
+    console.log([timeElapsed(time)], "Preparing food...");
+
+    return { ...rest, time };
+  },
+  ({ time, ...rest }) => {
+    const foodDetails = "Burger & Fries";
+    console.log([timeElapsed(time)], "Food is ready:", {
+      ...rest,
+      foodDetails,
+    });
+
+    return { ...rest, foodDetails, time };
+  },
+  3000,
+  packFood,
+);
+
+const receiveOrder = task(
+  (details) => {
+    return details;
+  },
+  ({ time, ...rest }) => {
+    const orderId = Math.floor(Math.random() * 8999) + 1000;
+    console.log([timeElapsed(time)], "Order received", { ...rest, orderId });
+
+    return { ...rest, orderId, time };
+  },
+  0,
+  prepareFood,
+);
+
+receiveOrder({ time: Date.now() });
+
+//----------------------previous approach-------------------
+
+const _deliverFood = ({ time, ...rest }) => {
+  console.log([timeElapsed(time)], "Delivering order...");
+  setTimeout(() => {
+    console.log([timeElapsed(time)], "Order delivered:", rest);
   }, 5000);
 };
 
-const packFood = ({ time, orderId, foodDetails, packageDetails }) => {
+const _packFood = ({ time, ...rest }) => {
+  console.log([timeElapsed(time)], "Packing order...");
   setTimeout(() => {
-    const timeElapsed = ((Date.now() - time) / 1000).toFixed(2);
-    console.log([timeElapsed], "Order packed:", {
-      orderId,
-      foodDetails,
-      packageDetails,
-    });
-    console.log([timeElapsed], "Delivering order...");
+    console.log([timeElapsed(time)], "Order packed:", rest);
     const deliveryDetails = "Delivered by John at 7:30 PM";
-    deliverFood({
-      time,
-      orderId,
-      foodDetails,
-      packageDetails,
-      deliveryDetails,
-    });
+    _deliverFood({ time, ...rest, deliveryDetails });
   }, 2000);
 };
 
-const prepareFood = ({ time, ...rest }) => {
+const _prepareFood = ({ time, ...rest }) => {
+  console.log([timeElapsed(time)], "Preparing food...");
   setTimeout(() => {
-    const timeElapsed = ((Date.now() - time) / 1000).toFixed(2);
-    console.log([timeElapsed], "food is ready:", rest);
-    console.log([timeElapsed], "Packing order...");
+    console.log([timeElapsed(time)], "food is ready:", rest);
     const packageDetails = "Packed in eco-friendly box";
-    packFood({ time, ...rest, packageDetails });
+    _packFood({ time, ...rest, packageDetails });
   }, 3000);
 };
 
-const receiveOrder = ({ time, orderId }) => {
+const _receiveOrder = ({ time, orderId }) => {
   setTimeout(() => {
-    const timeElapsed = ((Date.now() - time) / 100).toFixed(2);
-    console.log([timeElapsed], "Order received:", orderId);
-    console.log([timeElapsed], "Preparing food...");
+    console.log([timeElapsed(time)], "Order received:", orderId);
     const foodDetails = "Burger & Fries";
-    prepareFood({ time, orderId, foodDetails });
+    _prepareFood({ time, orderId, foodDetails });
   }, 0);
 };
 
 const main = () => {
   const time = Date.now();
-  const orderId = Math.floor(Math.random() * 899) + 100;
-  receiveOrder({ time, orderId });
+  const orderId = Math.floor(Math.random() * 8999) + 1000;
+  _receiveOrder({ time, orderId });
 };
 
 // main();
-
-const task = (begin, finish, timeTaken, next) => (details) => {
-  const beginDetails = begin(details);
-  setTimeout(() => {
-    const finishDetails = finish(beginDetails);
-    next();
-  }, timeTaken);
-};
-
-const _deliverFood = task(
-  () => console.log("Delivering order..."),
-  () => console.log("Ordered delivered:"),
-  5000,
-  () => {},
-);
-
-const _packFood = task(
-  () => console.log("Packing order..."),
-  () => console.log("Order packed:"),
-  2000,
-  _deliverFood,
-);
-
-const _prepareFood = task();
-const _receiveOrder = task();
-
-_receiveOrder();
